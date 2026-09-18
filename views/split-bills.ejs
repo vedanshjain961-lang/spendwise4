@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill Splitter - SpendWise</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-light">
+
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm border-bottom sticky-top">
+        <div class="container-fluid px-4"><a class="navbar-brand fw-bold text-primary d-flex align-items-center" href="/dashboard"><i class="bi bi-wallet2 fs-4 me-2 text-gold"></i> SpendWise</a></div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse border-end" id="sidebarMenu">
+                <div class="position-sticky pt-4 px-3">
+                    <ul class="nav flex-column gap-1">
+                        <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="bi bi-grid-1x2-fill me-2"></i> Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/transactions"><i class="bi bi-list-columns-reverse me-2"></i> Transactions</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/budgets"><i class="bi bi-pie-chart-fill me-2"></i> Budgets</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/savings"><i class="bi bi-piggy-bank-fill me-2"></i> Savings Goals</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/subscriptions"><i class="bi bi-arrow-repeat me-2"></i> Subscriptions</a></li>
+                        <li class="nav-item"><a class="nav-link active" href="/split-bills"><i class="bi bi-people-fill me-2"></i> Bill Splitter</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/debts"><i class="bi bi-bank me-2"></i> Debt Tracker</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/categories"><i class="bi bi-tags-fill me-2"></i> Categories</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/analytics"><i class="bi bi-bar-chart-fill me-2"></i> Analytics</a></li>
+                        <li class="nav-item mt-3"><a class="nav-link" href="/ai-advisor"><i class="bi bi-stars me-2 text-gold"></i> AI Advisor</a></li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+                    <h1 class="h3 fw-bold">Roommate Bill Splitter</h1>
+                    <button class="btn btn-primary rounded-pill shadow-sm px-4" data-bs-toggle="modal" data-bs-target="#splitModal"><i class="bi bi-plus-circle me-1"></i> New Split</button>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <% if (bills.length === 0) { %>
+                        <div class="col-12 text-center py-5">
+                            <i class="bi bi-receipt-cutoff text-muted fs-1 mb-3"></i>
+                            <h5 class="text-muted">No bills split yet.</h5>
+                            <p class="text-muted small">Perfect for splitting hostel rent, pizzas, or cab rides.</p>
+                        </div>
+                    <% } %>
+                    <% bills.forEach(b => { %>
+                        <div class="col-12 col-xl-4 col-md-6">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 p-2 dashboard-card <%= b.status === 'SETTLED' ? 'opacity-50 border border-success' : '' %>">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <h5 class="fw-bold mb-0 text-dark"><%= b.title %></h5>
+                                        <% if(b.status === 'SETTLED') { %>
+                                            <span class="badge bg-success rounded-pill d-flex align-items-center"><i class="bi bi-check2-all me-1"></i> Settled</span>
+                                        <% } else { %>
+                                            <span class="badge bg-warning text-dark rounded-pill d-flex align-items-center">Pending</span>
+                                        <% } %>
+                                    </div>
+                                    <p class="text-muted small mb-3">Total: <%= formatCurrency(b.total_amount) %> • Split with <%= b.split_with %> friend(s)</p>
+                                    
+                                    <div class="p-3 bg-light rounded-4 mb-3 d-flex justify-content-between align-items-center border">
+                                        <span class="text-muted fw-medium small">Owed per person:</span>
+                                        <span class="fw-bold fs-4 text-gold"><%= formatCurrency(b.amount_per_person) %></span>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between mt-3 pt-3 border-top">
+                                        <div>
+                                            <a href="https://wa.me/?text=Hey! We split <%= encodeURIComponent(b.title) %>. Your share is <%= encodeURIComponent(formatCurrency(b.amount_per_person)) %>. Let me know when you send it!" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill">
+                                                <i class="bi bi-whatsapp me-1"></i> Send Text
+                                            </a>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <% if (b.status !== 'SETTLED') { %>
+                                            <form action="/split-bills/settle" method="POST" class="m-0">
+                                                <input type="hidden" name="billId" value="<%= b.id %>">
+                                                <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3">Mark Settled</button>
+                                            </form>
+                                            <% } %>
+                                            <form action="/split-bills/delete" method="POST" class="m-0" onsubmit="return confirm('Delete this split bill record?');">
+                                                <input type="hidden" name="billId" value="<%= b.id %>">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle"><i class="bi bi-trash"></i></button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal fade" id="splitModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <form action="/split-bills" method="POST">
+                    <div class="modal-header border-bottom-0"><h5 class="modal-title fw-bold">Split a New Bill</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <input type="text" class="form-control mb-3 bg-light" name="title" placeholder="What was this for? (e.g. Domino's Pizza)" required>
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Total Bill Amount (₹)</label>
+                            <input type="number" step="0.01" class="form-control form-control-lg bg-light" name="totalAmount" placeholder="e.g. 500" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">How many friends are you splitting with? (Excluding yourself)</label>
+                            <input type="number" class="form-control bg-light" name="splitWith" placeholder="e.g. 2" required min="1">
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0 pt-0"><button type="submit" class="btn btn-primary w-100 rounded-pill fw-medium">Calculate Split</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Message copied to clipboard! You can paste it into WhatsApp.");
+            });
+        }
+    </script>
+</body>
+</html>

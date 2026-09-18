@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Savings Goals - SpendWise</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-light">
+
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm border-bottom sticky-top">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand fw-bold text-primary d-flex align-items-center" href="/dashboard"><i class="bi bi-wallet2 fs-4 me-2"></i> SpendWise</a>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-white sidebar collapse border-end" id="sidebarMenu">
+                <div class="position-sticky pt-4 px-3">
+                    <ul class="nav flex-column gap-1">
+                        <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="bi bi-grid-1x2-fill me-2"></i> Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/transactions"><i class="bi bi-list-columns-reverse me-2"></i> Transactions</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/budgets"><i class="bi bi-pie-chart-fill me-2"></i> Budgets</a></li>
+                        <li class="nav-item"><a class="nav-link active" href="/savings"><i class="bi bi-piggy-bank-fill me-2"></i> Savings Goals</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/subscriptions"><i class="bi bi-arrow-repeat me-2"></i> Subscriptions</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/split-bills"><i class="bi bi-people-fill me-2"></i> Bill Splitter</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/debts"><i class="bi bi-bank me-2"></i> Debt Tracker</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/categories"><i class="bi bi-tags-fill me-2"></i> Categories</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/analytics"><i class="bi bi-bar-chart-fill me-2"></i> Analytics</a></li>
+                        <li class="nav-item mt-3"><a class="nav-link" href="/ai-advisor"><i class="bi bi-stars me-2 text-gold"></i> AI Advisor</a></li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+                    <h1 class="h3 fw-bold">Savings Goals</h1>
+                    <button class="btn btn-primary rounded-pill shadow-sm px-4" data-bs-toggle="modal" data-bs-target="#goalModal"><i class="bi bi-plus-circle me-1"></i> New Goal</button>
+                </div>
+
+                <% 
+                    const inProgress = goals.filter(g => g.current_amount < g.target_amount);
+                    const completed = goals.filter(g => g.current_amount >= g.target_amount);
+                %>
+
+                <h5 class="fw-bold mb-3 text-dark">In Progress <span class="badge bg-primary rounded-pill"><%= inProgress.length %></span></h5>
+                <div class="row g-4 mb-5">
+                    <% if (inProgress.length === 0) { %>
+                        <div class="col-12 text-center py-4 border rounded-4 bg-white shadow-sm">
+                            <i class="bi bi-bullseye text-muted fs-1 mb-2"></i>
+                            <p class="text-muted mb-0">No active savings goals.</p>
+                        </div>
+                    <% } %>
+                    <% inProgress.forEach(g => { %>
+                        <div class="col-12 col-xl-6">
+                            <div class="card border-0 shadow-sm rounded-4 p-3 dashboard-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <h5 class="fw-bold"><%= g.name %></h5>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-outline-success rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#addFundModal" onclick="setGoalId('<%= g.id %>')">+ Add Funds</button>
+                                            <form action="/savings/delete" method="POST" class="m-0" onsubmit="return confirm('Are you sure you want to delete this savings goal?');">
+                                                <input type="hidden" name="goalId" value="<%= g.id %>">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle"><i class="bi bi-trash"></i></button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    <p class="text-muted small"><%= g.description %></p>
+                                    <div class="d-flex justify-content-between mb-1 mt-4">
+                                        <span class="fw-bold text-success fs-5"><%= formatCurrency(g.current_amount) %></span>
+                                        <span class="text-muted">Target: <%= formatCurrency(g.target_amount) %></span>
+                                    </div>
+                                    <div class="progress rounded-pill bg-light" style="height: 10px;">
+                                        <div class="progress-bar bg-success rounded-pill" style="width: <%= g.percentage %>%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+
+                <% if (completed.length > 0) { %>
+                <h5 class="fw-bold mb-3 text-success">Completed Goals 🏆 <span class="badge bg-success rounded-pill"><%= completed.length %></span></h5>
+                <div class="row g-4 mb-4">
+                    <% completed.forEach(g => { %>
+                        <div class="col-12 col-xl-6">
+                            <div class="card border-success border-2 shadow-sm rounded-4 p-3 dashboard-card bg-white opacity-75">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <h5 class="fw-bold text-success"><i class="bi bi-check-circle-fill me-2"></i><%= g.name %></h5>
+                                        <div class="d-flex gap-2">
+                                            <form action="/savings/delete" method="POST" class="m-0" onsubmit="return confirm('Are you sure you want to delete this savings goal?');">
+                                                <input type="hidden" name="goalId" value="<%= g.id %>">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle"><i class="bi bi-trash"></i></button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    <p class="text-muted small"><%= g.description %></p>
+                                    <div class="d-flex justify-content-between mb-1 mt-4">
+                                        <span class="fw-bold text-success fs-5"><%= formatCurrency(g.current_amount) %></span>
+                                        <span class="text-muted">Target: <%= formatCurrency(g.target_amount) %></span>
+                                    </div>
+                                    <div class="progress rounded-pill bg-light" style="height: 10px;">
+                                        <div class="progress-bar bg-success rounded-pill" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+                <% } %>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal fade" id="goalModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <form action="/savings" method="POST">
+                    <div class="modal-header border-bottom-0"><h5 class="modal-title fw-bold">New Savings Goal</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <input type="hidden" name="action" value="create">
+                        <input type="text" class="form-control mb-3 bg-light" name="name" placeholder="Goal Name (e.g. MacBook Pro)" required>
+                        <input type="number" class="form-control mb-3 bg-light" name="targetAmount" placeholder="Target Amount" required>
+                        <input type="number" class="form-control mb-3 bg-light" name="currentAmount" placeholder="Initial Savings (Optional)">
+                        <input type="date" class="form-control mb-3 bg-light" name="deadline">
+                        <input type="text" class="form-control bg-light" name="description" placeholder="Short description">
+                    </div>
+                    <div class="modal-footer border-top-0 pt-0"><button type="submit" class="btn btn-primary w-100 rounded-pill fw-medium">Create Goal</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addFundModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <form action="/savings" method="POST">
+                    <div class="modal-header border-bottom-0"><h5 class="modal-title fw-bold">Add Funds to Goal</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <input type="hidden" name="action" value="addFund">
+                        <input type="hidden" name="goalId" id="addFundGoalId">
+                        <input type="number" class="form-control bg-light" name="amount" placeholder="Amount to add" required>
+                    </div>
+                    <div class="modal-footer border-top-0 pt-0"><button type="submit" class="btn btn-success w-100 rounded-pill fw-medium">Add Funds</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>function setGoalId(id) { document.getElementById('addFundGoalId').value = id; }</script>
+</body>
+</html>
